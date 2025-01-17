@@ -1,7 +1,7 @@
 const sqlite3 = require('sqlite3').verbose();
 
 // Connect to SQLite database (creates a new file if it doesn't exist)
-const db = new sqlite3.Database('./projectDatabase.db', (err) => {
+const db = new sqlite3.Database('./projectDb.db', (err) => {
     if (err) {
         console.error('Error connecting to database:', err.message);
     } else {
@@ -15,8 +15,10 @@ const createUsersTable = () => {
     const createTableQuery = `
         CREATE TABLE IF NOT EXISTS users (
             userId TEXT PRIMARY KEY NOT NULL,
-            username VARCHAR NOT NULL,
-            password TEXT NOT NULL
+            username TEXT UNIQUE NOT NULL,
+            password TEXT NOT NULL,
+            email TEXT UNIQUE NOT NULL,
+            phoneNumber TEXT UNIQUE NOT NULL
         );
     `;
 
@@ -24,20 +26,37 @@ const createUsersTable = () => {
         if (err) {
             console.error('Error creating users table:', err.message);
         } else {
-            console.log('Users table created successfully with all columns NOT NULL.');
+            console.log('Users table created successfully ');
         }
     });
 };
+
 
 // Function to create properties table
 const createPropertiesTable = () => {
     const createTableQuery = `
         CREATE TABLE IF NOT EXISTS properties (
-            propertyId TEXT PRIMARY KEY NOT NULL,
-            propertyTitle VARCHAR NOT NULL,
-            description TEXT NOT NULL,
-            price INT NOT NULL,
+            propertyId TEXT PRIMARY KEY UNIQUE NOT NULL,
+            propertyTitle TEXT NOT NULL,
+            propertyType TEXT NOT NULL,
+            description TEXT,
+            price DECIMAL(15, 2) NOT NULL,
             ownerId TEXT NOT NULL,
+            propertyStatus TEXT,
+            address TEXT NOT NULL,
+            street TEXT NOT NULL,
+            city TEXT NOT NULL,
+            state TEXT NOT NULL,
+            pinCode TEXT NOT NULL,
+            mapLatitude DECIMAL(9, 6),
+            mapLongitude DECIMAL(9, 6),
+            priceNegotiable INTEGER DEFAULT 0, -- Use INTEGER for boolean
+            builtUpArea INT NOT NULL,
+            carpetArea INT,
+            propertyAge INT,
+            wallpaperImage TEXT,
+            createdAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updatedAt TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (ownerId) REFERENCES users(userId) ON DELETE CASCADE
         );
     `;
@@ -50,6 +69,7 @@ const createPropertiesTable = () => {
         }
     });
 };
+
 
 
 const createChatsTable = () => {
@@ -100,24 +120,7 @@ const createMessagesTable = () => {
 
 
 
-// Function to create tables
-/*const createTables = () => {
-    const createChatsTable = `
-        CREATE TABLE IF NOT EXISTS chats (
-            chat_id TEXT PRIMARY KEY,
-            message TEXT NOT NULL,
-            created_at DATETIME DEFAULT CURRENT_TIMESTAMP
-        );
-    `;
 
-    db.run(createChatsTable, (err) => {
-        if (err) {
-            console.error('Error creating chats table:', err.message);
-        } else {
-            console.log('Chats table created successfully.');
-        }
-    });
-}; */
 
 // Function to insert data
 /* const insertData = () => {

@@ -111,6 +111,7 @@ app.post("/register/", async (req, res) => {
             return res.status(400).json({ errorMsg: "User already exists" });
         }
      
+    
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 5);
        
@@ -238,14 +239,20 @@ app.post("/properties",async(request, response)=>{
 
 // Getting Properties API 
 
-app.get("/properties",authenticateToken ,async(request, response)=>{
-    try{
-        const {userId}=request.payload
+app.get("/properties",async(request, response)=>{
+    try{ 
+       /* const {userId}=request.payload
         const getPropertiesQuery=`
         SELECT properties.*  ,chats.status
         from properties LEFT JOIN chats ON chats.propertyId=properties.propertyId AND chats.userId=?;`
 
         const propertiesArray=await db.all(getPropertiesQuery,[userId])
+        */
+        const getPropertiesQuery=`
+        SELECT * 
+        from properties ;`
+
+        const propertiesArray=await db.all(getPropertiesQuery)
         response.status(201).json(propertiesArray)
     
     }catch (err) {
@@ -271,49 +278,64 @@ app.get("/properties",authenticateToken ,async(request, response)=>{
 
         const { ownerId } = response;
         const chatId=uuidv4()
-       
 
-        // Insert the chat request
-        const insertChatQuery = `
+        const checkChatRequestMadeQuery=`
+        select chatId from chats where userId=? and ownerId=? and propertyId=?`
+        const existingChatId=await db.get(checkChatRequestMadeQuery,[userId,ownerId,propertyId])
+       
+        
+
+        console.log("existing chat")
+        console.log(existingChatId)
+
+        if(existingChatId==undefined){
+            // Insert the chat request
+            const insertChatQuery = `
             INSERT INTO chats (chatId, propertyId, userId, ownerId, status)
             VALUES (?, ?, ?, ?, 'pending');`;
 
-        await db.run(insertChatQuery, [chatId, propertyId, userId, ownerId]);
-         
-        // get new chat request property name and username
+            await db.run(insertChatQuery, [chatId, propertyId, userId, ownerId]);
+             // get new chat request property name and username
 
-        const getChatRequestUsernameAndPropertyQuery= `
-        SELECT properties.propertyId,chats.chatId,chats.status,users.username, properties.propertyTitle 
-        FROM chats 
-        JOIN properties ON chats.propertyId = properties.propertyId 
-        JOIN users ON chats.userId = users.userId 
-        WHERE chats.chatId = ?
-        `
-       const newChatRequestDetails= await db.get(getChatRequestUsernameAndPropertyQuery,[chatId])
+                const getChatRequestUsernameAndPropertyQuery= `
+                SELECT properties.propertyId,chats.chatId,chats.status,users.username, properties.propertyTitle 
+                FROM chats 
+                JOIN properties ON chats.propertyId = properties.propertyId 
+                JOIN users ON chats.userId = users.userId 
+                WHERE chats.chatId = ?
+                `
+            const newChatRequestDetails= await db.get(getChatRequestUsernameAndPropertyQuery,[chatId])
 
 
       
 
-        //-----real time chat request update
-        const { username,propertyTitle,status}=newChatRequestDetails
+                //-----real time chat request update
+                const { username,propertyTitle,status}=newChatRequestDetails
 
-       const newChatRequest = {
-            chatId,username,propertyTitle,status
-        };
+            const newChatRequest = {
+                    chatId,username,propertyTitle,status
+                };
 
-        // Notify the owner in real-time
-       console.log(`connected clients : ${connectedClients}`)
-       console.log(connectedClients)
-        const ownerSocketId = connectedClients[ownerId];
-        console.log(`broadcast /targeted owner id : ${ownerId} socket id : ${connectedClients[ownerId]}`)
-        if (ownerSocketId) {
-            io.to(ownerSocketId).emit('newChatRequest', newChatRequest);
+                // Notify the owner in real-time
+            console.log(`connected clients : ${connectedClients}`)
+            console.log(connectedClients)
+                const ownerSocketId = connectedClients[ownerId];
+                console.log(`broadcast /targeted owner id : ${ownerId} socket id : ${connectedClients[ownerId]}`)
+                if (ownerSocketId) {
+                    io.to(ownerSocketId).emit('newChatRequest', newChatRequest);
+                }
+
+                //----------
+
+                // Success response
+              return  res.status(201).json({ newChatRequestDetails, message: 'Chat request sent' });
+
         }
+        res.status(201).json({  message: 'Chat request Already sent previously' });
 
-        //----------
-
-        // Success response
-        res.status(201).json({ newChatRequestDetails, message: 'Chat request sent' });
+        
+         
+       
     } catch (err) {
         console.error(err);
         res.status(500).json({ errorMsg: 'Database error' });
@@ -495,6 +517,27 @@ app.get("/get-chat-messages",authenticateToken,async(request, response)=>{
             }
         
 })
+
+
+// GET properties of owner
+
+app.get("/properties/owner",authenticateToken,async(request, response)=>{
+    try{
+        const {userId}=request.payload
+        const getPropertiesQuery=`
+        SELECT * 
+        from properties WHERE  ownerId=?`
+
+        const propertiesArray=await db.all(getPropertiesQuery,[userId])
+        response.status(201).json(propertiesArray)
+
+    
+    }catch (err) {
+            console.error(err);
+            response.status(500).json({ error: "Internal Server Error" });
+        }
+    
+    })
 
 /*app.put("",async(request, response)=>{
 try{
