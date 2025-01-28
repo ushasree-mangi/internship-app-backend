@@ -223,7 +223,7 @@ app.get("/user-profile",authenticateToken ,async(request,response)=>{
                 response.status(201).json({username:userDetails.username})
         } catch (err) {
             console.error(err);
-            res.status(500).json({ errorMsg: 'Database error' });
+            response.status(500).json({ errorMsg: 'Database error' });
         }
 })
 
