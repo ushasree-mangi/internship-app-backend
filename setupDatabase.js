@@ -18,7 +18,7 @@ const createUsersTable = () => {
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
             email TEXT UNIQUE NOT NULL,
-            phoneNumber TEXT UNIQUE NOT NULL
+            phoneNumber TEXT  NOT NULL
         );
     `;
 
@@ -33,25 +33,34 @@ const createUsersTable = () => {
 
 
 // Function to create properties table
+
+//location imgUrl new fields are added
 const createPropertiesTable = () => {
     const createTableQuery = `
         CREATE TABLE IF NOT EXISTS properties (
             propertyId TEXT PRIMARY KEY UNIQUE NOT NULL,
             propertyTitle TEXT NOT NULL,
-            propertyType TEXT NOT NULL,
-            description TEXT,
             price DECIMAL(15, 2) NOT NULL,
             ownerId TEXT NOT NULL,
+            propertyType TEXT ,
+            description TEXT,
+
+
+            location TEXT, 
+            imgUrl TEXT,
+
+
+
             propertyStatus TEXT,
-            address TEXT NOT NULL,
-            street TEXT NOT NULL,
-            city TEXT NOT NULL,
-            state TEXT NOT NULL,
-            pinCode TEXT NOT NULL,
+            address TEXT ,
+            street TEXT ,
+            city TEXT ,
+            state TEXT ,
+            pinCode TEXT ,
             mapLatitude DECIMAL(9, 6),
             mapLongitude DECIMAL(9, 6),
             priceNegotiable INTEGER DEFAULT 0, -- Use INTEGER for boolean
-            builtUpArea INT NOT NULL,
+            builtUpArea INT,
             carpetArea INT,
             propertyAge INT,
             wallpaperImage TEXT,

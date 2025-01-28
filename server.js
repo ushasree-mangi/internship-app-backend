@@ -45,7 +45,7 @@ const { timeStamp } = require('console');
 
 const PORT =  process.env.PORT || 4000
 
-const dbPath = path.join(__dirname, "projectDatabase.db");
+const dbPath = path.join(__dirname, "projectDb.db");    
 
 let db = null; 
 
@@ -96,31 +96,44 @@ const initializeDBAndServer = async () => {
 
 
 // Register API
-app.post("/register/", async (req, res) => {
+app.post("/register", async (req, res) => {
    
     
-    const { username, password } = req.body;
+    const { username, password ,email,phoneNumber} = req.body;
     const id = uuidv4(); // Generate a unique user ID
+    
   
     try {
-        // Check if the user already exists
-        const selectUserQuery = `SELECT * FROM users WHERE username = ?`;
-        const dbUser = await db.get(selectUserQuery, [username]);
+
+        // Check if the username already exists
+        const selectUserNameQuery = `SELECT * FROM users WHERE username = ?`;
+        const dbUserName = await db.get(selectUserNameQuery, [username]);
    
-        if (dbUser) {
-            return res.status(400).json({ errorMsg: "User already exists" });
+      
+        if (dbUserName) {
+            return res.status(400).json({ errorMsg: "User Name already exists! Enter unique Username" });
         }
-     
+
+        // Check if the user already exists with unique email Id
+        const selectUserMailIdQuery = `SELECT * FROM users WHERE email = ?`;
+        const dbUserMailId = await db.get(selectUserMailIdQuery, [email]);
+       
+
+        if (dbUserMailId) {
+            return res.status(400).json({ errorMsg: "User already Registered with this provided mailID" });
+        }
+
+        
     
         // Hash the password
         const hashedPassword = await bcrypt.hash(password, 5);
        
         // Insert new user
         const createUserQuery = `
-            INSERT INTO users (userId, username, password) 
-            VALUES (?, ?, ?)
+            INSERT INTO users (userId, username,email, password,phoneNumber) 
+            VALUES (?, ?, ?,?,?)
         `;
-        const dbResponse = await db.run(createUserQuery, [id, username, hashedPassword]);
+        const dbResponse = await db.run(createUserQuery, [id, username,email, hashedPassword,phoneNumber]);
       
         const newUserId = dbResponse.lastID; // Get the inserted user ID
         res.status(201).json({ message: `Created new user with ID ${newUserId}` });
@@ -538,6 +551,28 @@ app.get("/properties/owner",authenticateToken,async(request, response)=>{
         }
     
     })
+
+
+    app.post("/add-properties",authenticateToken,async(request, response)=>{
+        try{
+            const {propertyTitle,price,description,location,propertyType,imgUrl}=request.body
+            const {userId}=request.payload
+           
+            const propertyId=uuidv4()
+            const insertPropertyQuery=`
+            insert into properties (propertyId , propertyTitle, description,location , price, imgUrl ,propertyType , ownerId)
+            VALUES (?,? ,? ,? ,? ,? ,? , ?);`
+
+            await db.run(insertPropertyQuery,[propertyId , propertyTitle, description,location , price, imgUrl ,propertyType , userId])
+
+            response.status(201).json({message:"property inserted successfully"})
+        
+        }catch (err) {
+                console.error(err);
+                response.status(500).json({ error: "Internal Server Error" });
+            }
+        
+        })
 
 /*app.put("",async(request, response)=>{
 try{
