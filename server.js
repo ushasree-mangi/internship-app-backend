@@ -192,7 +192,7 @@ const authenticateToken = (request, response, next) => {
     }
     if (jwtToken === undefined) {
       
-      response.status(401).json({error_msg:"Invalid JWT Token"});
+      response.status(400).json({errorMsg:"Invalid JWT Token"});
     } else {
       jwt.verify(jwtToken, "usha@myap1s1", async (error, payload) => {
         if (error) {
@@ -207,7 +207,7 @@ const authenticateToken = (request, response, next) => {
     }
 }catch(err){
      console.log(`invalid token :${err}`)
-     response.status(401).json({error_msg:"Invalid JWT Token"});
+     response.status(400).json({errorMsg:"Invalid JWT Token"});
 }
   };
 
@@ -220,7 +220,7 @@ app.get("/user-profile",authenticateToken ,async(request,response)=>{
                 const dbUserQuery=`
                 SELECT * FROM users where userId=?`
                 const userDetails=await db.get(dbUserQuery ,[userId])
-                response.status(201).json({username:userDetails.username})
+                response.status(201).json(userDetails)
         } catch (err) {
             console.error(err);
             response.status(500).json({ errorMsg: 'Database error' });
@@ -243,6 +243,7 @@ app.post("/properties",async(request, response)=>{
         io.emit('newProperty', property); // Broadcast to all connected clients
 
         response.status(201).json({message:"Property added successfully"})
+
     }catch (err) {
             console.error(err);
             response.status(500).json({ errorMsg: "Internal Server Error" });
@@ -274,6 +275,30 @@ app.get("/properties",async(request, response)=>{
         }
     
     })
+
+
+// GET property details API
+
+app.get('/property-details', async(request,response)=>{
+      const { propertyId } = request.query;
+      
+
+      try{
+
+         const getPropertyDetailsQuery=`
+           SELECT * from properties where propertyId=?` ;
+         const propertyDetails =await db.get(getPropertyDetailsQuery,[propertyId])
+       
+         response.status(201).json(propertyDetails)
+
+      }
+      catch (err) {
+        console.error(err);
+        response.status(500).json({ errorMsg: 'Database error' });
+       
+    }
+      
+})
  
 // chat request API
 
@@ -555,6 +580,7 @@ app.get("/properties/owner",authenticateToken,async(request, response)=>{
 
     app.post("/add-properties",authenticateToken,async(request, response)=>{
         try{
+            console.log("api call made")
             const {propertyTitle,price,description,location,propertyType,imgUrl}=request.body
             const {userId}=request.payload
            
